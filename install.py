@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""CRPC AI環境セットアップ（Windows / Mac 共通）
+
+使い方:
+  Windows: ダブルクリック、または python install.py
+  Mac:     python3 install.py（または install.command を使用）
+"""
+
+import os
+import platform
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+def pip_install(package: str) -> None:
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", package, "-q"],
+        stdout=subprocess.DEVNULL,
+    )
+
+
+def save_api_key(api_key: str) -> None:
+    config_dir = Path.home() / ".config" / "crpc"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    (config_dir / "gemini-api-key").write_text(api_key, encoding="utf-8")
+    print(f"✅ API キーを {config_dir / 'gemini-api-key'} に保存しました")
+
+    if platform.system() == "Windows":
+        subprocess.run(["setx", "GEMINI_API_KEY", api_key], capture_output=True)
+        print("✅ 環境変数 GEMINI_API_KEY を設定しました（次回ターミナル起動から有効）")
+    else:
+        zshrc = Path.home() / ".zshrc"
+        lines = []
+        if zshrc.exists():
+            lines = [l for l in zshrc.read_text().splitlines(keepends=True)
+                     if "GEMINI_API_KEY" not in l]
+        lines += ["\n", "# Gemini API キー（CRPC音声文字起こし用）\n",
+                  f'export GEMINI_API_KEY="{api_key}"\n']
+        zshrc.write_text("".join(lines), encoding="utf-8")
+        print("✅ API キーを ~/.zshrc に保存しました")
+
+
+def load_existing_key() -> str:
+    key = os.environ.get("GEMINI_API_KEY", "")
+    if not key:
+        config_file = Path.home() / ".config" / "crpc" / "gemini-api-key"
+        if config_file.exists():
+            key = config_file.read_text(encoding="utf-8").strip()
+    return key
+
+
+def main() -> None:
+    print("=" * 48)
+    print("  CRPC AI環境 セットアップ")
+    print("=" * 48)
+    print()
+
+    # google-genai
+    try:
+        import google.genai  # noqa: F401
+        print("✅ google-genai: インストール済み")
+    except ImportError:
+        print("google-genai ライブラリをインストール中...")
+        pip_install("google-genai")
+        print("✅ google-genai インストール完了")
+
+    # Claude Code スキル（skills/ 配下を全自動インストール）
+    print()
+    commands_dir = Path.home() / ".claude" / "commands"
+    if commands_dir.is_dir():
+        skills_dir = Path(__file__).parent / "skills"
+        installed = 0
+        if skills_dir.is_dir():
+            for skill_file in sorted(skills_dir.glob("*.md")):
+                shutil.copy2(skill_file, commands_dir / skill_file.name)
+                print(f"✅ /{skill_file.stem} スキルをインストールしました")
+                installed += 1
+        if installed == 0:
+            print("ℹ️  インストールするスキルはありません")
+    else:
+        print("ℹ️  Claude Code 未インストール: スキルのインストールをスキップ")
+
+    # Gemini API キー
+    print()
+    existing_key = load_existing_key()
+    if existing_key:
+        print("✅ Gemini API キー: 設定済み")
+        update = input("キーを更新しますか？ [y/N] ").strip().lower()
+        if update != "y":
+            _finish()
+            return
+
+    print()
+    print("Gemini API キーを設定します。")
+    print("取得方法は README.md の「Gemini API キーの取得」を参照してください。")
+    print()
+    api_key = input("API キーを貼り付けてください: ").strip()
+    if not api_key:
+        print("キーが入力されませんでした。終了します。")
+        _finish()
+        return
+
+    # キー動作確認
+    print()
+    print("API キーを確認中...")
+    try:
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        client.models.generate_content(model="gemini-2.5-flash", contents="OK")
+        print("✅ API キー確認完了")
+    except Exception as e:
+        print(f"【エラー】{e}")
+        print()
+        print("確認事項:")
+        print("  1. キーが正しくコピーされているか")
+        print("  2. Generative Language API が有効化されているか")
+        print("     （README.md の「Gemini API キーの取得」を参照）")
+        _finish()
+        return
+
+    save_api_key(api_key)
+
+    print()
+    print("=" * 48)
+    print("  セットアップ完了！")
+    print("=" * 48)
+    print()
+    if platform.system() == "Windows":
+        print("使い方: audio-transcribe.bat をダブルクリック")
+    else:
+        print("使い方: audio-transcribe.command をダブルクリック")
+    _finish()
+
+
+def _finish() -> None:
+    print()
+    input("Enterで閉じる...")
+
+
+if __name__ == "__main__":
+    main()
