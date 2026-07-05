@@ -60,6 +60,25 @@ if [ -d ~/.claude/commands ]; then
     else
         echo "ℹ️  vendor/claude-toolkit が見つかりません: スキルのインストールをスキップ"
     fi
+
+    # ステータスライン
+    STATUSLINE_SRC="$SCRIPT_DIR/vendor/claude-toolkit/tools/statusline/statusline.py"
+    if [ -f "$STATUSLINE_SRC" ]; then
+        cp "$STATUSLINE_SRC" ~/.claude/statusline.py
+        chmod +x ~/.claude/statusline.py
+        python3 -c "
+import json
+from pathlib import Path
+p = Path.home() / '.claude' / 'settings.json'
+try:
+    d = json.loads(p.read_text(encoding='utf-8'))
+except (FileNotFoundError, json.JSONDecodeError):
+    d = {}
+d['statusLine'] = {'type': 'command', 'command': 'python3 ~/.claude/statusline.py'}
+p.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding='utf-8')
+"
+        echo "✅ ステータスラインをインストールしました（claude-toolkit共通）"
+    fi
 else
     echo "ℹ️  Claude Code 未インストール: スキルのインストールをスキップ"
 fi

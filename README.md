@@ -14,6 +14,7 @@
 | 音声文字起こし | 会議録音から議事録3種（原文・ケバ取り・要約）を自動生成 |
 | markdown-export（Claude Codeスキル） | markdown → Word(.docx) / PDF 変換 |
 | markdown-to-gdocs（Claude Codeスキル） | markdown/docx → Google Docs アップロード＋体裁適用（要・自分のGoogle Cloud OAuthセットアップ、上級者向け） |
+| ステータスライン | Claude Codeのターミナル下部に使用状況（コンテキスト・レート制限・作業フォルダ・アカウント）を表示 |
 
 ## セットアップ
 
@@ -104,11 +105,12 @@ crpc-tools/
 ├── audio-transcribe.bat     # 音声文字起こし（Windows）
 ├── audio-transcribe.command # 音声文字起こし（Mac）
 ├── skills/                  # CRPC固有スキル（現在は空。追加方法は skills/README.md）
-├── vendor/claude-toolkit/   # saito-laとも共有する汎用スキル集（submodule）
-│   └── skills/
-│       ├── markdown-export/
-│       ├── markdown-to-gdocs/
-│       └── transcribe-meeting/   # 音声文字起こし本体はここ
+├── vendor/claude-toolkit/   # saito-laとも共有する汎用ツール集（submodule）
+│   ├── skills/
+│   │   ├── markdown-export/
+│   │   ├── markdown-to-gdocs/
+│   │   └── transcribe-meeting/   # 音声文字起こし本体はここ
+│   └── tools/statusline/         # ステータスライン本体はここ
 └── prompts/                 # Claude.ai 用プロンプト
     └── README.md
 ```

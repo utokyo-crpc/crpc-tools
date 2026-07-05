@@ -6,6 +6,7 @@
   Mac:     python3 install.py（または install.command を使用）
 """
 
+import json
 import os
 import platform
 import shutil
@@ -99,6 +100,23 @@ def main() -> None:
                 installed += 1
         if installed == 0:
             print("ℹ️  インストールするスキルはありません")
+
+        # ステータスライン（vendor/claude-toolkit/tools/statusline/statusline.py）
+        statusline_src = Path(__file__).parent / "vendor" / "claude-toolkit" / "tools" / "statusline" / "statusline.py"
+        if statusline_src.is_file():
+            statusline_dest = claude_dir / "statusline.py"
+            shutil.copy2(statusline_src, statusline_dest)
+            if platform.system() != "Windows":
+                statusline_dest.chmod(0o755)
+            settings_path = claude_dir / "settings.json"
+            try:
+                settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            except (FileNotFoundError, json.JSONDecodeError):
+                settings = {}
+            py_cmd = "python" if platform.system() == "Windows" else "python3"
+            settings["statusLine"] = {"type": "command", "command": f"{py_cmd} ~/.claude/statusline.py"}
+            settings_path.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
+            print("✅ ステータスラインをインストールしました（claude-toolkit共通）")
     else:
         print("ℹ️  Claude Code 未インストール: スキルのインストールをスキップ")
 
