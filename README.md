@@ -1,15 +1,19 @@
 # CRPC AI環境ツール
 
-随時更新（2026-07-03 時点）
+随時更新（2026-07-05 時点）
 
 東京大学医学部附属病院 臨床研究推進センター（CRPC）メンバー向けのAIツール・スキル一式。
 `git pull` で常に最新版に更新できる。
+
+音声文字起こし等の汎用スキルは [claude-toolkit](https://github.com/utokyo-crpc/claude-toolkit)（`vendor/claude-toolkit`、saito-la家族とも共有）から取り込んでいる。
 
 ## 収録ツール
 
 | ツール | 内容 |
 |--------|------|
 | 音声文字起こし | 会議録音から議事録3種（原文・ケバ取り・要約）を自動生成 |
+| markdown-export（Claude Codeスキル） | markdown → Word(.docx) / PDF 変換 |
+| markdown-to-gdocs（Claude Codeスキル） | markdown/docx → Google Docs アップロード＋体裁適用（要・自分のGoogle Cloud OAuthセットアップ、上級者向け） |
 
 ## セットアップ
 
@@ -18,32 +22,33 @@
 1. このリポジトリをクローン（初回のみ）
 
    ```
-   git clone https://github.com/utokyo-crpc/crpc-tools.git
+   git clone --recursive https://github.com/utokyo-crpc/crpc-tools.git
    ```
 
 2. `install.bat` をダブルクリック
 
-   Python のインストール確認・Gemini API キー設定まで自動で行う。
+   共通スキルの取得（submodule）・Python のインストール確認・Gemini API キー設定まで自動で行う（`--recursive` を付け忘れても自動で取得される）。
 
 ### Mac
 
 1. このリポジトリをクローン（初回のみ）
 
    ```
-   git clone https://github.com/utokyo-crpc/crpc-tools.git
+   git clone --recursive https://github.com/utokyo-crpc/crpc-tools.git
    ```
 
 2. `install.command` をダブルクリック
 
-   Python・Homebrew のインストール確認・Gemini API キー設定まで自動で行う。
+   共通スキルの取得（submodule）・Python・Homebrew のインストール確認・Gemini API キー設定まで自動で行う（`--recursive` を付け忘れても自動で取得される）。
 
 ## 更新
 
 ```
 git pull
+git submodule update --init --recursive
 ```
 
-スキルが追加・更新された場合は `install.bat`（Windows）または `install.command`（Mac）を再実行する。
+スキルが追加・更新された場合は `install.bat`（Windows）または `install.command`（Mac）を再実行する（submoduleの取得もあわせて行われる）。
 
 ## Gemini API キーの取得
 
@@ -78,15 +83,16 @@ git pull
 **コマンドライン（任意）:**
 
 ```bash
-python audio-transcribe.py 録音.m4a
-python audio-transcribe.py 録音.m4a --gui     # ダイアログで選択
-python audio-transcribe.py 録音.m4a --split   # 最初から分割モード
+SCRIPT=vendor/claude-toolkit/skills/transcribe-meeting/scripts/audio-transcribe.py
+python3 $SCRIPT 録音.m4a
+python3 $SCRIPT 録音.m4a --gui     # ダイアログで選択
+python3 $SCRIPT 録音.m4a --split   # 最初から分割モード
 ```
 
 ### Claude Code スキル
 
 `/transcribe-meeting` — 対話形式で話者名指定・スライド参照ができる高精度版。
-セットアップ時に自動インストールされる。
+セットアップ時に自動インストールされる（`~/.claude/skills/transcribe-meeting/`）。
 
 ## ディレクトリ構成
 
@@ -97,9 +103,12 @@ crpc-tools/
 ├── install.py               # セットアップ本体
 ├── audio-transcribe.bat     # 音声文字起こし（Windows）
 ├── audio-transcribe.command # 音声文字起こし（Mac）
-├── audio-transcribe.py      # スクリプト本体
-├── skills/                  # Claude Code スキル
-│   └── transcribe-meeting.md
+├── skills/                  # CRPC固有スキル（現在は空。追加方法は skills/README.md）
+├── vendor/claude-toolkit/   # saito-laとも共有する汎用スキル集（submodule）
+│   └── skills/
+│       ├── markdown-export/
+│       ├── markdown-to-gdocs/
+│       └── transcribe-meeting/   # 音声文字起こし本体はここ
 └── prompts/                 # Claude.ai 用プロンプト
     └── README.md
 ```

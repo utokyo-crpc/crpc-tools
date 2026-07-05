@@ -9,6 +9,11 @@ echo "  CRPC AI環境 セットアップ"
 echo "================================================"
 echo ""
 
+# ── 共通スキル集（vendor/claude-toolkit）を取得 ──────────
+if command -v git &>/dev/null && [ -d "$SCRIPT_DIR/.git" ]; then
+    git -C "$SCRIPT_DIR" submodule update --init --recursive --quiet
+fi
+
 # ── Python 確認 ──────────────────────────────────────
 if ! command -v python3 &>/dev/null; then
     echo "Python3 が見つかりません。Homebrew でインストールします..."
@@ -40,13 +45,23 @@ else
     echo "✅ google-genai: インストール済み"
 fi
 
-# ── Claude Code スキル ────────────────────────────────
+# ── Claude Code スキル（vendor/claude-toolkit/skills/*/ を ~/.claude/skills/ へコピー）──
 echo ""
 if [ -d ~/.claude/commands ]; then
-    cp "$SCRIPT_DIR/transcribe-meeting.md" ~/.claude/commands/
-    echo "✅ /transcribe-meeting スキルをインストールしました"
+    mkdir -p ~/.claude/skills
+    if [ -d "$SCRIPT_DIR/vendor/claude-toolkit/skills" ]; then
+        for skill_dir in "$SCRIPT_DIR"/vendor/claude-toolkit/skills/*/; do
+            name="$(basename "$skill_dir")"
+            [ -f "${skill_dir}SKILL.md" ] || continue
+            rm -rf ~/.claude/skills/"$name"
+            cp -R "$skill_dir" ~/.claude/skills/"$name"
+            echo "✅ $name スキルをインストールしました（claude-toolkit共通）"
+        done
+    else
+        echo "ℹ️  vendor/claude-toolkit が見つかりません: スキルのインストールをスキップ"
+    fi
 else
-    echo "ℹ️  Claude Code 未インストール: /transcribe-meeting スキルはスキップ"
+    echo "ℹ️  Claude Code 未インストール: スキルのインストールをスキップ"
 fi
 
 # ── Gemini API キー ───────────────────────────────────
@@ -71,7 +86,7 @@ fi
 
 echo ""
 echo "Gemini API キーを設定します。"
-echo "取得方法は audio-transcribe-setup.md（このフォルダの1つ上）を参照してください。"
+echo "取得方法は README.md の「Gemini API キーの取得」を参照してください。"
 echo ""
 echo "API キーを貼り付けてください："
 read -r API_KEY
@@ -102,7 +117,7 @@ if [[ "$RESULT" != "OK" ]]; then
     echo ""
     echo "1. キーが正しくコピーされているか確認してください"
     echo "2. Generative Language API が有効化されているか確認してください"
-    echo "   （audio-transcribe-setup.md の Step 4 を参照）"
+    echo "   （README.md の「Gemini API キーの取得」を参照）"
     read -p "Enterで終了..."
     exit 1
 fi

@@ -22,7 +22,7 @@ def pip_install(package: str) -> None:
 
 
 def save_api_key(api_key: str) -> None:
-    config_dir = Path.home() / ".config" / "crpc"
+    config_dir = Path.home() / ".config" / "claude-toolkit"
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "gemini-api-key").write_text(api_key, encoding="utf-8")
     print(f"✅ API キーを {config_dir / 'gemini-api-key'} に保存しました")
@@ -45,9 +45,11 @@ def save_api_key(api_key: str) -> None:
 def load_existing_key() -> str:
     key = os.environ.get("GEMINI_API_KEY", "")
     if not key:
-        config_file = Path.home() / ".config" / "crpc" / "gemini-api-key"
-        if config_file.exists():
-            key = config_file.read_text(encoding="utf-8").strip()
+        for config_dir_name in ("claude-toolkit", "crpc"):  # crpc は旧バージョンとの互換用
+            config_file = Path.home() / ".config" / config_dir_name / "gemini-api-key"
+            if config_file.exists():
+                key = config_file.read_text(encoding="utf-8").strip()
+                break
     return key
 
 
@@ -66,16 +68,34 @@ def main() -> None:
         pip_install("google-genai")
         print("✅ google-genai インストール完了")
 
-    # Claude Code スキル（skills/ 配下を全自動インストール）
+    # Claude Code スキル
+    # 1) skills/ 直下の.md（CRPC固有・単体ファイル形式）→ ~/.claude/commands/
+    # 2) vendor/claude-toolkit/skills/*/（saito-la共通・scripts同梱形式）→ ~/.claude/skills/<name>/ へディレクトリごとコピー
+    #    （symlinkはWindowsで権限が必要になるため使わず、copytreeで実体をコピーする）
     print()
-    commands_dir = Path.home() / ".claude" / "commands"
+    claude_dir = Path.home() / ".claude"
+    commands_dir = claude_dir / "commands"
     if commands_dir.is_dir():
-        skills_dir = Path(__file__).parent / "skills"
         installed = 0
-        if skills_dir.is_dir():
-            for skill_file in sorted(skills_dir.glob("*.md")):
+        local_skills_dir = Path(__file__).parent / "skills"
+        if local_skills_dir.is_dir():
+            for skill_file in sorted(local_skills_dir.glob("*.md")):
                 shutil.copy2(skill_file, commands_dir / skill_file.name)
                 print(f"✅ /{skill_file.stem} スキルをインストールしました")
+                installed += 1
+
+        toolkit_skills_dir = Path(__file__).parent / "vendor" / "claude-toolkit" / "skills"
+        skills_dest_dir = claude_dir / "skills"
+        if toolkit_skills_dir.is_dir():
+            skills_dest_dir.mkdir(parents=True, exist_ok=True)
+            for skill_dir in sorted(toolkit_skills_dir.iterdir()):
+                if not (skill_dir / "SKILL.md").is_file():
+                    continue
+                dest = skills_dest_dir / skill_dir.name
+                if dest.exists():
+                    shutil.rmtree(dest)
+                shutil.copytree(skill_dir, dest, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                print(f"✅ {skill_dir.name} スキルをインストールしました（claude-toolkit共通）")
                 installed += 1
         if installed == 0:
             print("ℹ️  インストールするスキルはありません")

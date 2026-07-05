@@ -16,7 +16,7 @@ if [ -z "$GEMINI_API_KEY" ]; then
 fi
 if [ -z "$GEMINI_API_KEY" ]; then
     echo "【エラー】Gemini API キーが設定されていません。"
-    echo "先に gemini-setup.command を実行してください。"
+    echo "先に install.command を実行してください。"
     read -p "Enterで閉じる..."
     exit 1
 fi
@@ -50,7 +50,7 @@ TRANSCRIPT="${OUTPUT_DIR}${STEM}_transcript.txt"
 echo ""
 echo "Gemini で文字起こし中（しばらくお待ちください）..."
 echo "※ まず音声ファイル丸ごとで送信します。品質が悪ければ自動で分割モードに切り替わります。"
-GEMINI_API_KEY="$GEMINI_API_KEY" python3 "$SCRIPT_DIR/audio-transcribe.py" \
+GEMINI_API_KEY="$GEMINI_API_KEY" python3 "$SCRIPT_DIR/vendor/claude-toolkit/skills/transcribe-meeting/scripts/audio-transcribe.py" \
     "$AUDIO_FILE" --output "$TRANSCRIPT"
 
 if [ $? -ne 0 ]; then

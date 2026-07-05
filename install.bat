@@ -7,6 +7,12 @@ echo   CRPC AI環境 セットアップ
 echo ================================================
 echo.
 
+:: 共通スキル集（vendor/claude-toolkit）を取得
+where git > nul 2>&1
+if not errorlevel 1 if exist ".git" (
+    git submodule update --init --recursive --quiet
+)
+
 :: Python確認（python / py どちらでも可）
 set PYTHON=
 python --version > nul 2>&1
