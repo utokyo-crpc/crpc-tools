@@ -94,11 +94,14 @@ def main() -> None:
                 if not (skill_dir / "SKILL.md").is_file():
                     continue
                 dest = skills_dest_dir / skill_dir.name
-                if dest.exists():
-                    shutil.rmtree(dest)
-                shutil.copytree(skill_dir, dest, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-                print(f"✅ {skill_dir.name} スキルをインストールしました（claude-toolkit共通）")
-                installed += 1
+                try:
+                    if dest.exists():
+                        shutil.rmtree(dest)
+                    shutil.copytree(skill_dir, dest, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                    print(f"✅ {skill_dir.name} スキルをインストールしました（claude-toolkit共通）")
+                    installed += 1
+                except OSError as e:
+                    print(f"⚠️  {skill_dir.name} スキルの導入に失敗しました（スキップして続行）: {e}")
         if installed == 0:
             print("ℹ️  インストールするスキルはありません")
 
@@ -114,8 +117,7 @@ def main() -> None:
                 settings = json.loads(settings_path.read_text(encoding="utf-8"))
             except (FileNotFoundError, json.JSONDecodeError):
                 settings = {}
-            py_cmd = "python" if platform.system() == "Windows" else "python3"
-            settings["statusLine"] = {"type": "command", "command": f"{py_cmd} ~/.claude/statusline.py"}
+            settings["statusLine"] = {"type": "command", "command": f"{sys.executable} ~/.claude/statusline.py"}
             settings_path.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
             print("✅ ステータスラインをインストールしました（claude-toolkit共通）")
     else:
@@ -123,6 +125,11 @@ def main() -> None:
 
     # Gemini API キー
     print()
+    if os.environ.get("CRPC_SKIP_API_KEY") == "1" or "--skip-api-key" in sys.argv:
+        print("ℹ️  CRPC_SKIP_API_KEY が指定されたため、Gemini API キー設定をスキップしました")
+        _finish()
+        return
+
     existing_key = load_existing_key()
     if existing_key:
         print("✅ Gemini API キー: 設定済み")
