@@ -75,8 +75,9 @@ def main() -> None:
     #    （symlinkはWindowsで権限が必要になるため使わず、copytreeで実体をコピーする）
     print()
     claude_dir = Path.home() / ".claude"
-    commands_dir = claude_dir / "commands"
-    if commands_dir.is_dir():
+    if claude_dir.is_dir() or shutil.which("claude"):
+        commands_dir = claude_dir / "commands"
+        commands_dir.mkdir(parents=True, exist_ok=True)
         installed = 0
         local_skills_dir = Path(__file__).parent / "skills"
         if local_skills_dir.is_dir():
