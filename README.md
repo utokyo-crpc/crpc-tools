@@ -1,6 +1,6 @@
 # CRPC AI環境ツール
 
-随時更新（2026-07-05 時点）
+随時更新（2026-07-16 時点）
 
 東京大学医学部附属病院 臨床研究推進センター（CRPC）メンバー向けのAIツール・スキル一式。
 `git pull` で常に最新版に更新できる。
@@ -14,6 +14,11 @@
 | 音声文字起こし | 会議録音から議事録3種（原文・ケバ取り・要約）を自動生成 |
 | markdown-export（Claude Codeスキル） | markdown → Word(.docx) / PDF 変換 |
 | markdown-to-gdocs（Claude Codeスキル） | markdown/docx → Google Docs アップロード＋体裁適用（要・自分のGoogle Cloud OAuthセットアップ、上級者向け） |
+| mcp-setup（Claude Codeスキル） | Claude CodeへのMCPサーバー接続・セットアップ手順を案内 |
+| format-prompt（Claude Codeスキル） | 粗いプロンプトを7ブロックの型に整形 |
+| interest-profile（Claude Codeスキル） | 会話履歴からユーザーの興味プロファイルを生成・更新 |
+| meishi-rename（Claude Codeスキル） | 名刺スキャンPDFのファイル名をOCR結果から整形 |
+| person-research（Claude Codeスキル） | 人物調査URLからレジストリを横断調査し根拠付きレポートを作成 |
 | ステータスライン | Claude Codeのターミナル下部に使用状況（コンテキスト・レート制限・作業フォルダ・アカウント）を表示 |
 
 ## セットアップ
@@ -109,7 +114,12 @@ crpc-tools/
 │   ├── skills/
 │   │   ├── markdown-export/
 │   │   ├── markdown-to-gdocs/
-│   │   └── transcribe-meeting/   # 音声文字起こし本体はここ
+│   │   ├── transcribe-meeting/   # 音声文字起こし本体はここ
+│   │   ├── mcp-setup/
+│   │   ├── format-prompt/
+│   │   ├── interest-profile/
+│   │   ├── meishi-rename/
+│   │   └── person-research/
 │   └── tools/statusline/         # ステータスライン本体はここ
 └── prompts/                 # Claude.ai 用プロンプト
     └── README.md
