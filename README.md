@@ -20,7 +20,7 @@
 | meishi-rename（Claude Codeスキル） | 名刺スキャンPDFのファイル名をOCR結果から整形 |
 | person-research（Claude Codeスキル） | 人物調査URLからレジストリを横断調査し根拠付きレポートを作成 |
 | ステータスライン | Claude Codeのターミナル下部に使用状況（コンテキスト・レート制限・作業フォルダ・アカウント）を表示 |
-| schedule-reply（Claude Codeスキル） | 日程調整メール(tonton/調整さん)にUTokyoカレンダーの空きで自動回答（要・個別セットアップ、上級者向け） |
+| schedule-reply（Claude Codeスキル） | 日程調整メール(tonton/調整さん)にGoogleカレンダーの空きで自動回答（要・個別セットアップ、上級者向け） |
 
 ## セットアップ
 
@@ -104,8 +104,8 @@ python3 $SCRIPT 録音.m4a --split   # 最初から分割モード
 ### 日程調整メール自動回答
 
 上級者向け。Google Calendar/Gmailへの書き込み・自動送信を伴うため `install.bat`/`install.command` では
-自動セットアップされない。導入する場合は `tools/schedule-reply/README.md` に沿って自分の
-`config.json`（氏名・除外条件・認証情報）を作成してから使う。
+SKILL.md自体のコピーのみ行われる。導入する場合は `vendor/claude-toolkit/skills/schedule-reply/scripts/README.md`
+に沿って自分の `config.json`（氏名・除外条件・認証情報）を作成してから使う。
 
 ## ディレクトリ構成
 
@@ -126,9 +126,9 @@ crpc-tools/
 │   │   ├── format-prompt/
 │   │   ├── interest-profile/
 │   │   ├── meishi-rename/
-│   │   └── person-research/
+│   │   ├── person-research/
+│   │   └── schedule-reply/       # 日程調整メール自動回答（要・個別セットアップ、上級者向け）
 │   └── tools/statusline/         # ステータスライン本体はここ
-├── tools/schedule-reply/    # 日程調整メール自動回答（要・個別セットアップ、上級者向け）
 └── prompts/                 # Claude.ai 用プロンプト
     └── README.md
 ```
