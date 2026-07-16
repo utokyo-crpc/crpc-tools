@@ -45,10 +45,6 @@ git submodule update --init --recursive
 
 スキルが追加・更新されたらインストーラ（`install.command` / `install.bat`）を再実行する。
 
-## 音声文字起こし
-
-Claude Code で `/transcribe-meeting` を実行する。話者同定・スライド参照つきで議事録3種（原文・ケバ取り・要約）を生成する。詳細は claude-toolkit を参照。
-
 ## ディレクトリ構成
 
 ```
