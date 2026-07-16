@@ -140,7 +140,7 @@ def main() -> None:
 
     print()
     print("Gemini API キーを設定します。")
-    print("取得方法は README.md の「Gemini API キーの取得」を参照してください。")
+    print("取得方法は README.md の「Gemini API キー」を参照してください。")
     print()
     api_key = input("API キーを貼り付けてください: ").strip()
     if not api_key:
@@ -162,7 +162,7 @@ def main() -> None:
         print("確認事項:")
         print("  1. キーが正しくコピーされているか")
         print("  2. Generative Language API が有効化されているか")
-        print("     （README.md の「Gemini API キーの取得」を参照）")
+        print("     （README.md の「Gemini API キー」を参照）")
         _finish()
         return
 
@@ -173,10 +173,7 @@ def main() -> None:
     print("  セットアップ完了！")
     print("=" * 48)
     print()
-    if platform.system() == "Windows":
-        print("使い方: audio-transcribe.bat をダブルクリック")
-    else:
-        print("使い方: audio-transcribe.command をダブルクリック")
+    print("使い方: Claude Code で /transcribe-meeting を実行")
     _finish()
 
 

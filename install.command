@@ -96,7 +96,7 @@ if [ -n "$GEMINI_API_KEY" ]; then
         echo "  セットアップ完了"
         echo "================================================"
         echo ""
-        echo "使い方: audio-transcribe.command をダブルクリック"
+        echo "使い方: Claude Code で /transcribe-meeting を実行"
         echo ""
         read -p "Enterで閉じる..."
         exit 0
@@ -105,7 +105,7 @@ fi
 
 echo ""
 echo "Gemini API キーを設定します。"
-echo "取得方法は README.md の「Gemini API キーの取得」を参照してください。"
+echo "取得方法は README.md の「Gemini API キー」を参照してください。"
 echo ""
 echo "API キーを貼り付けてください："
 read -r API_KEY
@@ -136,7 +136,7 @@ if [[ "$RESULT" != "OK" ]]; then
     echo ""
     echo "1. キーが正しくコピーされているか確認してください"
     echo "2. Generative Language API が有効化されているか確認してください"
-    echo "   （README.md の「Gemini API キーの取得」を参照）"
+    echo "   （README.md の「Gemini API キー」を参照）"
     read -p "Enterで終了..."
     exit 1
 fi
@@ -154,6 +154,6 @@ echo "================================================"
 echo "  セットアップ完了！"
 echo "================================================"
 echo ""
-echo "使い方: audio-transcribe.command をダブルクリック"
+echo "使い方: Claude Code で /transcribe-meeting を実行"
 echo ""
 read -p "Enterで閉じる..."
