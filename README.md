@@ -7,20 +7,16 @@
 
 音声文字起こし等の汎用スキルは [claude-toolkit](https://github.com/utokyo-crpc/claude-toolkit)（`vendor/claude-toolkit`、saito-la家族とも共有）から取り込んでいる。
 
-## 収録ツール
+## 収録内容
 
-| ツール | 内容 |
-|--------|------|
-| 音声文字起こし | 会議録音から議事録3種（原文・ケバ取り・要約）を自動生成 |
-| markdown-export（Claude Codeスキル） | markdown → Word(.docx) / PDF 変換 |
-| markdown-to-gdocs（Claude Codeスキル） | markdown/docx → Google Docs アップロード＋体裁適用（要・自分のGoogle Cloud OAuthセットアップ、上級者向け） |
-| mcp-setup（Claude Codeスキル） | Claude CodeへのMCPサーバー接続・セットアップ手順を案内 |
-| format-prompt（Claude Codeスキル） | 粗いプロンプトを7ブロックの型に整形 |
-| interest-profile（Claude Codeスキル） | 会話履歴からユーザーの興味プロファイルを生成・更新 |
-| meishi-rename（Claude Codeスキル） | 名刺スキャンPDFのファイル名をOCR結果から整形 |
-| person-research（Claude Codeスキル） | 人物調査URLからレジストリを横断調査し根拠付きレポートを作成 |
-| ステータスライン | Claude Codeのターミナル下部に使用状況（コンテキスト・レート制限・作業フォルダ・アカウント）を表示 |
-| schedule-reply（Claude Codeスキル） | 日程調整メール(tonton/調整さん)にGoogleカレンダーの空きで自動回答（要・個別セットアップ、上級者向け） |
+2層構成になっている。**汎用スキルの一覧・詳細は正本の [claude-toolkit](https://github.com/utokyo-crpc/claude-toolkit) を参照**（重複を避けるためここでは再掲しない）。
+
+- **CRPC固有（このリポジトリ直下）**
+  - セットアップ：`install.command`（Mac）／`install.bat`（Windows）／`install.py`
+  - 音声文字起こしの起動ラッパ：`audio-transcribe.command`／`audio-transcribe.bat`（本体は claude-toolkit の `transcribe-meeting`）
+  - CRPC専用Skill：`skills/`（追加方法は `skills/README.md`）
+  - Claude.ai用プロンプト：`prompts/`（追加方法は `prompts/README.md`）
+- **汎用ツール（`vendor/claude-toolkit`・submodule）**：markdown変換・Google Docs化・議事録文字起こし・MCP設定案内・プロンプト整形・ステータスライン等。個人情報・機密を含まず、他組織・saito-la家族とも共有する。実体と最新の一覧は claude-toolkit が正本。
 
 ## セットアップ
 
