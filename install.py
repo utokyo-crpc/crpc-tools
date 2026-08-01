@@ -105,23 +105,46 @@ def main() -> None:
         if installed == 0:
             print("ℹ️  インストールするスキルはありません")
 
-        # 3) vendor/claude-toolkit/conventions/*.md（作業種別ごとの規約）→ ~/.claude/conventions/
-        #    文書・手順書・スプレッドシート等を作るときの作法。CLAUDE.md への取り込みは任意で、
-        #    配置しても自動では読まれない（「規約に沿って」と頼むか CLAUDE.md に1行足すと効く）。
-        #    ファイルを列挙せず *.md をループする＝規約が増えたときの配線漏れが起きない。
-        toolkit_conv_dir = Path(__file__).parent / "vendor" / "claude-toolkit" / "conventions"
-        if toolkit_conv_dir.is_dir():
-            conv_dest_dir = claude_dir / "conventions"
-            conv_dest_dir.mkdir(parents=True, exist_ok=True)
-            conv_n = 0
-            for conv in sorted(toolkit_conv_dir.glob("*.md")):
+        # 3) vendor/claude-toolkit の md 3組を ~/.claude/ へ配置する。
+        #    どれも CLAUDE.md への取り込みは任意で、配置しても自動では読まれない
+        #    （「規約に沿って」と頼むか CLAUDE.md に @import を1行足すと効く）。
+        #    ファイルを列挙せず *.md をループする＝増えたときの配線漏れが起きない。
+        #    README.md は説明書きなので配置しない。
+        #      conventions/  → ~/.claude/conventions/  文書・手順書・スプレッドシート等の作法
+        #      guides/       → ~/.claude/              必要になった時だけ読む参照文書
+        #      instructions/ → ~/.claude/instructions/ グローバル指示の断片
+        toolkit_dir = Path(__file__).parent / "vendor" / "claude-toolkit"
+
+        def copy_md_dir(name, dest_sub):
+            src = toolkit_dir / name
+            if not src.is_dir():
+                return 0
+            dest = claude_dir / dest_sub if dest_sub else claude_dir
+            dest.mkdir(parents=True, exist_ok=True)
+            n = 0
+            for md in sorted(src.glob("*.md")):
+                if md.name == "README.md":
+                    continue
                 try:
-                    shutil.copy2(conv, conv_dest_dir / conv.name)
-                    conv_n += 1
+                    shutil.copy2(md, dest / md.name)
+                    n += 1
                 except OSError as e:
-                    print(f"⚠️  規約 {conv.name} の配置に失敗しました（スキップして続行）: {e}")
-            if conv_n:
-                print(f"✅ 作業規約 {conv_n} 件を ~/.claude/conventions/ に配置しました（取り込みは任意）")
+                    print(f"⚠️  {md.name} の配置に失敗しました（スキップして続行）: {e}")
+            return n
+
+        conv_n = copy_md_dir("conventions", "conventions")
+        if conv_n:
+            print(f"✅ 作業規約 {conv_n} 件を ~/.claude/conventions/ に配置しました（取り込みは任意）")
+        guide_n = copy_md_dir("guides", "")
+        if guide_n:
+            print(f"✅ 参照文書 {guide_n} 件を ~/.claude/ に配置しました（SESSION-END.md 等・取り込みは任意）")
+        inst_n = copy_md_dir("instructions", "instructions")
+        if inst_n:
+            print(f"✅ グローバル指示の断片 {inst_n} 件を ~/.claude/instructions/ に配置しました")
+            print("   使う場合は ~/.claude/CLAUDE.md に次を足してください（置くだけでは読まれません）:")
+            for md in sorted((toolkit_dir / "instructions").glob("*.md")):
+                if md.name != "README.md":
+                    print(f"     @instructions/{md.name}")
 
         # ステータスライン（vendor/claude-toolkit/tools/statusline/statusline.py）
         statusline_src = Path(__file__).parent / "vendor" / "claude-toolkit" / "tools" / "statusline" / "statusline.py"
