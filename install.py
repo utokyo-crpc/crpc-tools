@@ -105,6 +105,24 @@ def main() -> None:
         if installed == 0:
             print("ℹ️  インストールするスキルはありません")
 
+        # 3) vendor/claude-toolkit/conventions/*.md（作業種別ごとの規約）→ ~/.claude/conventions/
+        #    文書・手順書・スプレッドシート等を作るときの作法。CLAUDE.md への取り込みは任意で、
+        #    配置しても自動では読まれない（「規約に沿って」と頼むか CLAUDE.md に1行足すと効く）。
+        #    ファイルを列挙せず *.md をループする＝規約が増えたときの配線漏れが起きない。
+        toolkit_conv_dir = Path(__file__).parent / "vendor" / "claude-toolkit" / "conventions"
+        if toolkit_conv_dir.is_dir():
+            conv_dest_dir = claude_dir / "conventions"
+            conv_dest_dir.mkdir(parents=True, exist_ok=True)
+            conv_n = 0
+            for conv in sorted(toolkit_conv_dir.glob("*.md")):
+                try:
+                    shutil.copy2(conv, conv_dest_dir / conv.name)
+                    conv_n += 1
+                except OSError as e:
+                    print(f"⚠️  規約 {conv.name} の配置に失敗しました（スキップして続行）: {e}")
+            if conv_n:
+                print(f"✅ 作業規約 {conv_n} 件を ~/.claude/conventions/ に配置しました（取り込みは任意）")
+
         # ステータスライン（vendor/claude-toolkit/tools/statusline/statusline.py）
         statusline_src = Path(__file__).parent / "vendor" / "claude-toolkit" / "tools" / "statusline" / "statusline.py"
         if statusline_src.is_file():
