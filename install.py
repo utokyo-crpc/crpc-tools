@@ -6,7 +6,6 @@
   Mac:     python3 install.py（または install.command を使用）
 """
 
-import json
 import os
 import platform
 import shutil
@@ -15,11 +14,21 @@ import sys
 from pathlib import Path
 
 
-def pip_install(package: str) -> None:
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", package, "-q"],
-        stdout=subprocess.DEVNULL,
-    )
+def pip_install(package: str) -> bool:
+    """ライブラリを入れる。**失敗しても全体を止めない。**
+
+    Homebrew Python や最近の Linux では PEP 668（externally-managed-environment）で
+    system-wide の pip install が拒否される。以前は check_call の例外がそのまま出て
+    インストーラごと落ち、スキル配置にすら到達しなかった。文字起こし以外の機能は
+    このライブラリに依存しないので、警告に留めて続行する。
+    """
+    for extra in ([], ["--user"], ["--break-system-packages"]):
+        if subprocess.call(
+            [sys.executable, "-m", "pip", "install", package, "-q", *extra],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        ) == 0:
+            return True
+    return False
 
 
 def save_api_key(api_key: str) -> None:
@@ -60,19 +69,31 @@ def main() -> None:
     print("=" * 48)
     print()
 
-    # google-genai
+    # google-genai（音声文字起こし用。これが無くても他のスキルは動く）
+    genai_ok = True
     try:
         import google.genai  # noqa: F401
         print("✅ google-genai: インストール済み")
     except ImportError:
         print("google-genai ライブラリをインストール中...")
-        pip_install("google-genai")
-        print("✅ google-genai インストール完了")
+        if pip_install("google-genai"):
+            print("✅ google-genai インストール完了")
+        else:
+            genai_ok = False
+            print("⚠️  google-genai を入れられませんでした（続行します）")
+            print("   /transcribe-meeting だけが使えません。手動で入れる場合:")
+            print(f"     {sys.executable} -m pip install --user google-genai")
 
     # Claude Code スキル
-    # 1) skills/ 直下の.md（CRPC固有・単体ファイル形式）→ ~/.claude/commands/
-    # 2) vendor/claude-toolkit/skills/*/（saito-la共通・scripts同梱形式）→ ~/.claude/skills/<name>/ へディレクトリごとコピー
-    #    （symlinkはWindowsで権限が必要になるため使わず、copytreeで実体をコピーする）
+    # 1) CRPC固有（skills/ 直下の単体 .md）→ ~/.claude/commands/  ここで配置する
+    # 2) 汎用（vendor/claude-toolkit）→ vendor/claude-toolkit/install.py に委譲する
+    #
+    # 2 の置き方をここに書かない。同じ配置ロジックを配布先ごとに書き直していた頃は
+    # bash・PowerShell・Python で4実装に分裂し、statusLine の扱いが3種類に割れて、
+    # 本人環境の設定を2度壊した（2026-08-01）。実装は claude-toolkit 側の1つだけ。
+    #
+    # 2回目以降の実行でも更新が当たる。上流で増えたスキル・規約は置かれ、廃止された
+    # ものは撤去される（install.py が前回の配置を記録していて突き合わせる）。
     print()
     claude_dir = Path.home() / ".claude"
     if claude_dir.is_dir() or shutil.which("claude"):
@@ -82,85 +103,24 @@ def main() -> None:
         local_skills_dir = Path(__file__).parent / "skills"
         if local_skills_dir.is_dir():
             for skill_file in sorted(local_skills_dir.glob("*.md")):
+                if skill_file.name == "README.md":
+                    continue  # 説明書き。配置すると /README という空コマンドが生える
                 shutil.copy2(skill_file, commands_dir / skill_file.name)
                 print(f"✅ /{skill_file.stem} スキルをインストールしました")
                 installed += 1
-
-        toolkit_skills_dir = Path(__file__).parent / "vendor" / "claude-toolkit" / "skills"
-        skills_dest_dir = claude_dir / "skills"
-        if toolkit_skills_dir.is_dir():
-            skills_dest_dir.mkdir(parents=True, exist_ok=True)
-            for skill_dir in sorted(toolkit_skills_dir.iterdir()):
-                if not (skill_dir / "SKILL.md").is_file():
-                    continue
-                dest = skills_dest_dir / skill_dir.name
-                try:
-                    if dest.exists():
-                        shutil.rmtree(dest)
-                    shutil.copytree(skill_dir, dest, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-                    print(f"✅ {skill_dir.name} スキルをインストールしました（claude-toolkit共通）")
-                    installed += 1
-                except OSError as e:
-                    print(f"⚠️  {skill_dir.name} スキルの導入に失敗しました（スキップして続行）: {e}")
         if installed == 0:
-            print("ℹ️  インストールするスキルはありません")
+            print("ℹ️  CRPC固有のコマンドはありません")
 
-        # 3) vendor/claude-toolkit の md 3組を ~/.claude/ へ配置する。
-        #    どれも CLAUDE.md への取り込みは任意で、配置しても自動では読まれない
-        #    （「規約に沿って」と頼むか CLAUDE.md に @import を1行足すと効く）。
-        #    ファイルを列挙せず *.md をループする＝増えたときの配線漏れが起きない。
-        #    README.md は説明書きなので配置しない。
-        #      conventions/  → ~/.claude/conventions/  文書・手順書・スプレッドシート等の作法
-        #      guides/       → ~/.claude/              必要になった時だけ読む参照文書
-        #      instructions/ → ~/.claude/instructions/ グローバル指示の断片
-        toolkit_dir = Path(__file__).parent / "vendor" / "claude-toolkit"
-
-        def copy_md_dir(name, dest_sub):
-            src = toolkit_dir / name
-            if not src.is_dir():
-                return 0
-            dest = claude_dir / dest_sub if dest_sub else claude_dir
-            dest.mkdir(parents=True, exist_ok=True)
-            n = 0
-            for md in sorted(src.glob("*.md")):
-                if md.name == "README.md":
-                    continue
-                try:
-                    shutil.copy2(md, dest / md.name)
-                    n += 1
-                except OSError as e:
-                    print(f"⚠️  {md.name} の配置に失敗しました（スキップして続行）: {e}")
-            return n
-
-        conv_n = copy_md_dir("conventions", "conventions")
-        if conv_n:
-            print(f"✅ 作業規約 {conv_n} 件を ~/.claude/conventions/ に配置しました（取り込みは任意）")
-        guide_n = copy_md_dir("guides", "")
-        if guide_n:
-            print(f"✅ 参照文書 {guide_n} 件を ~/.claude/ に配置しました（SESSION-END.md 等・取り込みは任意）")
-        inst_n = copy_md_dir("instructions", "instructions")
-        if inst_n:
-            print(f"✅ グローバル指示の断片 {inst_n} 件を ~/.claude/instructions/ に配置しました")
-            print("   使う場合は ~/.claude/CLAUDE.md に次を足してください（置くだけでは読まれません）:")
-            for md in sorted((toolkit_dir / "instructions").glob("*.md")):
-                if md.name != "README.md":
-                    print(f"     @instructions/{md.name}")
-
-        # ステータスライン（vendor/claude-toolkit/tools/statusline/statusline.py）
-        statusline_src = Path(__file__).parent / "vendor" / "claude-toolkit" / "tools" / "statusline" / "statusline.py"
-        if statusline_src.is_file():
-            statusline_dest = claude_dir / "statusline.py"
-            shutil.copy2(statusline_src, statusline_dest)
-            if platform.system() != "Windows":
-                statusline_dest.chmod(0o755)
-            settings_path = claude_dir / "settings.json"
-            try:
-                settings = json.loads(settings_path.read_text(encoding="utf-8"))
-            except (FileNotFoundError, json.JSONDecodeError):
-                settings = {}
-            settings["statusLine"] = {"type": "command", "command": f"{sys.executable} ~/.claude/statusline.py"}
-            settings_path.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
-            print("✅ ステータスラインをインストールしました（claude-toolkit共通）")
+        toolkit_installer = Path(__file__).parent / "vendor" / "claude-toolkit" / "install.py"
+        if toolkit_installer.is_file():
+            rc = subprocess.call([sys.executable, str(toolkit_installer), "--label", "crpc-tools"])
+            if rc == 2:
+                print("⚠️  汎用スキルの配置を中止しました（上記の指示に従ってください）")
+            elif rc != 0:
+                print("⚠️  汎用スキルの配置で一部失敗しました（続行します）")
+        else:
+            print("⚠️  vendor/claude-toolkit がありません。次を実行してください:")
+            print("     git submodule update --init --recursive")
     else:
         print("ℹ️  Claude Code 未インストール: スキルのインストールをスキップ")
 
@@ -168,6 +128,11 @@ def main() -> None:
     print()
     if os.environ.get("CRPC_SKIP_API_KEY") == "1" or "--skip-api-key" in sys.argv:
         print("ℹ️  CRPC_SKIP_API_KEY が指定されたため、Gemini API キー設定をスキップしました")
+        _finish()
+        return
+    if not genai_ok:
+        # キーの動作確認に google-genai が要る。入っていないなら聞くだけ無駄。
+        print("ℹ️  google-genai が無いため Gemini API キーの設定をスキップしました")
         _finish()
         return
 
@@ -220,7 +185,10 @@ def main() -> None:
 
 def _finish() -> None:
     print()
-    input("Enterで閉じる...")
+    # ダブルクリック起動でウィンドウが即閉じないよう待つ。パイプ経由・CI など
+    # 端末が無い場合は待たない（従来は EOFError で最後にトレースバックが出ていた）。
+    if sys.stdin.isatty():
+        input("Enterで閉じる...")
 
 
 if __name__ == "__main__":

@@ -45,7 +45,7 @@ git pull
 git submodule update --init --recursive
 ```
 
-スキルが追加・更新されたらインストーラ（`install.command` / `install.bat`）を再実行する。
+そのあとインストーラ（`install.command` / `install.bat`）を再実行する。何度実行しても問題ない。上流で追加されたスキル・規約は配置され、**廃止されたものは端末から撤去される**。自分で書き換えたファイルは残す。
 
 ## ディレクトリ構成
 
