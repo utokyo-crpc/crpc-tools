@@ -187,8 +187,17 @@ def _finish() -> None:
     print()
     # ダブルクリック起動でウィンドウが即閉じないよう待つ。パイプ経由・CI など
     # 端末が無い場合は待たない（従来は EOFError で最後にトレースバックが出ていた）。
-    if sys.stdin.isatty():
+    #
+    # isatty() だけでは足りない。Windows の `cmd /c install.bat` 経由では stdin が
+    # すぐ EOF を返すのに isatty() が True になり、ガードを素通りして EOFError で
+    # 終了コード1になる（2026-08-15、311C4W991 で2回とも再現）。配置は済んだ後
+    # なので実害は無いが、自動実行では失敗と判定される。EOF も併せて受け止める。
+    if not sys.stdin.isatty():
+        return
+    try:
         input("Enterで閉じる...")
+    except EOFError:
+        print()
 
 
 if __name__ == "__main__":
