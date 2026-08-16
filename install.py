@@ -64,6 +64,16 @@ def load_existing_key() -> str:
 
 
 def main() -> None:
+    # 行ごとに掃き出す。既定の stdout はリダイレクト・パイプ経由だとブロック
+    # バッファになり、subprocess.call で呼ぶ claude-toolkit/install.py の出力が
+    # 先に画面へ出てしまう。結果「claude-toolkit を配置しました」が CRPC の
+    # バナーより前に並び、どちらが何をしたのか読み取れない（2026-08-15、
+    # 311C4W991 で確認）。子プロセスと順序を揃えるため親側を行バッファにする。
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except AttributeError:  # Python 3.6 以前
+        pass
+
     print("=" * 48)
     print("  CRPC AI環境 セットアップ")
     print("=" * 48)
@@ -187,8 +197,17 @@ def _finish() -> None:
     print()
     # ダブルクリック起動でウィンドウが即閉じないよう待つ。パイプ経由・CI など
     # 端末が無い場合は待たない（従来は EOFError で最後にトレースバックが出ていた）。
-    if sys.stdin.isatty():
+    #
+    # isatty() だけでは足りない。Windows の `cmd /c install.bat` 経由では stdin が
+    # すぐ EOF を返すのに isatty() が True になり、ガードを素通りして EOFError で
+    # 終了コード1になる（2026-08-15、311C4W991 で2回とも再現）。配置は済んだ後
+    # なので実害は無いが、自動実行では失敗と判定される。EOF も併せて受け止める。
+    if not sys.stdin.isatty():
+        return
+    try:
         input("Enterで閉じる...")
+    except EOFError:
+        print()
 
 
 if __name__ == "__main__":
