@@ -2,7 +2,7 @@
 
 CRPC固有・単体ファイル形式のClaude Codeスキルを置く場所。`install.bat` / `install.command` 実行時に `~/.claude/commands/` へ自動コピーされる。
 
-現在このディレクトリは空。saito-la（家族）とも共有している汎用スキル（`transcribe-meeting`・`markdown-export`・`markdown-to-gdocs`）は `vendor/claude-toolkit/skills/` に移設し、`~/.claude/skills/` へディレクトリごとインストールされる（[claude-toolkit](https://github.com/utokyo-crpc/claude-toolkit)を参照）。
+現在あるのは `monthly-claude-report.md`（AI活用の月次報告を手で動かす。本体は `../monthly-report/`）。saito-la（家族）とも共有している汎用スキル（`transcribe-meeting`・`markdown-export`・`markdown-to-gdocs`）は `vendor/claude-toolkit/skills/` に移設し、`~/.claude/skills/` へディレクトリごとインストールされる（[claude-toolkit](https://github.com/utokyo-crpc/claude-toolkit)を参照）。
 
 ## 追加方法
 

@@ -83,6 +83,10 @@ else
     echo "ℹ️  Claude Code 未インストール: スキルのインストールをスキップ"
 fi
 
+# ── AI活用の月次報告の定期実行（monthly-report/README.md）──
+echo ""
+python3 "$SCRIPT_DIR/monthly-report/register.py"
+
 # ── Gemini API キー ───────────────────────────────────
 echo ""
 source ~/.zshrc 2>/dev/null

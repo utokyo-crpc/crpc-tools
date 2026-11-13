@@ -134,6 +134,10 @@ def main() -> None:
     else:
         print("ℹ️  Claude Code 未インストール: スキルのインストールをスキップ")
 
+    # AI活用の月次報告の定期実行（monthly-report/README.md）
+    print()
+    subprocess.call([sys.executable, str(Path(__file__).parent / "monthly-report" / "register.py")])
+
     # Gemini API キー
     print()
     if os.environ.get("CRPC_SKIP_API_KEY") == "1" or "--skip-api-key" in sys.argv:
