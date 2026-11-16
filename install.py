@@ -11,6 +11,7 @@ install.bat と install.command は入口だけで、submodule の取得と Pyth
 
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -53,6 +54,26 @@ def save_api_key(api_key: str) -> None:
                   f'export GEMINI_API_KEY="{api_key}"\n']
         zshrc.write_text("".join(lines), encoding="utf-8")
         print("✅ API キーを ~/.zshrc に保存しました")
+
+
+TRANSCRIBE_SCRIPT = (Path(__file__).parent / "vendor" / "claude-toolkit" / "skills"
+                     / "transcribe-meeting" / "scripts" / "audio-transcribe.py")
+
+
+def transcribe_model() -> str:
+    """文字起こし（transcribe-meeting）が使うモデル名を読む。キーの確認はこのモデルで行う。
+
+    モデル名をここに書き写さない。モデルを選ぶのは文字起こしの品質の検証で、その結果は
+    audio-transcribe.py の TRANSCRIBE_MODEL にだけある。以前はここに gemini-2.5-flash を
+    書き写していたため、文字起こしのモデルを替えた後もインストーラだけが古いモデルで確かめ続け、
+    そのモデルが廃止されると 404 でキーを保存できなくなった（2026-11-16）。
+    """
+    try:
+        text = TRANSCRIBE_SCRIPT.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    m = re.search(r'^TRANSCRIBE_MODEL\s*=\s*"([^"]+)"', text, re.MULTILINE)
+    return m.group(1) if m else ""
 
 
 def load_existing_key() -> str:
@@ -173,11 +194,17 @@ def main() -> None:
 
     # キー動作確認
     print()
-    print("API キーを確認中...")
+    model = transcribe_model()
+    if not model:
+        print("【エラー】文字起こしのモデル名を読めませんでした（vendor/claude-toolkit が欠けているか古い）。")
+        print("     git submodule update --init --recursive を実行してから、もう一度実行してください")
+        _finish()
+        return
+    print(f"API キーを確認中...（{model}）")
     try:
         from google import genai
         client = genai.Client(api_key=api_key)
-        client.models.generate_content(model="gemini-2.5-flash", contents="OK")
+        client.models.generate_content(model=model, contents="OK")
         print("✅ API キー確認完了")
     except Exception as e:
         print(f"【エラー】{e}")
