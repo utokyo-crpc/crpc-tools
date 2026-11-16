@@ -1,7 +1,7 @@
 # CRPC AI環境ツール
 
 作成日：2026-07-03
-改訂日：2026-11-09
+改訂日：2026-11-16
 
 東京大学医学部附属病院 臨床研究推進センター（CRPC）メンバー向けの配布リポジトリ。
 Claude Code のスキルと補助ツールを `git pull` で常に最新版に保てる。
@@ -15,17 +15,23 @@ Claude Code のスキルと補助ツールを `git pull` で常に最新版に�
 
 ### 初回
 
-1. クローン（初回のみ）
+1. 置きたいフォルダへ移ってからクローンする（初回のみ）。`crpc-tools` というフォルダがその中にできる。例は、ホームの `Projects` に置く場合
 
    ```
+   mkdir -p ~/Projects
+   cd ~/Projects
    git clone --recursive https://github.com/utokyo-crpc/crpc-tools.git
    ```
 
-2. インストーラをダブルクリック
-   - Mac：`install.command`
-   - Windows：`install.bat`
+2. インストーラを動かす
+   - Mac：Finder で `install.command` をダブルクリックする。ターミナルから動かすときは、`crpc-tools` のフォルダで `./install.command` と打つ（先頭の `./` が要る。`install.command` だけでは「command not found」になる）
+   - Windows：エクスプローラーで `install.bat` をダブルクリックする
 
    汎用スキルの取得（submodule）・Python等の確認・Gemini APIキー設定まで自動で行う（`--recursive` を付け忘れても取得される）。
+
+### 個人の PC に入れる場合
+
+Claude Code の設定と会話の記録は、PC のユーザーごとに `~/.claude`（Windows は `%USERPROFILE%\.claude`）に置かれる。個人の用途でも Claude Code を使っている PC にそのまま入れると、CRPC 用のスキル・設定と個人の会話の記録が同じ場所に混ざる。個人の PC に入れるときは、CRPC の仕事用に PC のユーザーを別に作り、そのユーザーでクローンとインストールを行う。
 
 ### Gemini API キー
 

@@ -35,6 +35,29 @@ def pip_install(package: str) -> bool:
     return False
 
 
+def genai_importable() -> bool:
+    """入れた google-genai を、この Python が実際に読み込めるかを確かめる。
+
+    pip が成功を返しても、入った先をこの Python が見ていなければ、後のキーの確認で
+    ImportError になる（2026-11-16、大崎さんのレビュー）。--user で初めて入れたときは、
+    ユーザーの site-packages が起動時の sys.path に無いので、ここで足してから読み込む。
+    """
+    import importlib
+    import site
+    try:
+        site.addsitedir(site.getusersitepackages())
+    except Exception:
+        pass
+    importlib.invalidate_caches()
+    try:
+        from google import genai  # noqa: F401
+        return True
+    except ImportError as e:
+        print(f"⚠️  google-genai を入れたが読み込めません：{e}")
+        print(f"   使っている Python：{sys.executable}")
+        return False
+
+
 def save_api_key(api_key: str) -> None:
     config_dir = Path.home() / ".config" / "claude-toolkit"
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -110,7 +133,7 @@ def main() -> None:
         print("✅ google-genai: インストール済み")
     except ImportError:
         print("google-genai ライブラリをインストール中...")
-        if pip_install("google-genai"):
+        if pip_install("google-genai") and genai_importable():
             print("✅ google-genai インストール完了")
         else:
             genai_ok = False
