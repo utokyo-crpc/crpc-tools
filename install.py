@@ -2,8 +2,11 @@
 """CRPC AI環境セットアップ（Windows / Mac 共通）
 
 使い方:
-  Windows: ダブルクリック、または python install.py
-  Mac:     python3 install.py（または install.command を使用）
+  Windows: install.bat をダブルクリック、または python install.py
+  Mac:     install.command をダブルクリック、または python3 install.py
+
+install.bat と install.command は入口だけで、submodule の取得と Python の確認のあと本スクリプトを
+呼ぶ。導入・配置・キーの設定は、ここにだけ書く。
 """
 
 import os

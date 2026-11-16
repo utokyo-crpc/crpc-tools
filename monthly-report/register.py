@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """AI活用の月次報告の定期実行を登録する（Windows はタスク スケジューラ、Mac は launchd）。
 
-install.py と install.command から呼ばれる。何度実行しても同じ状態になる。
+install.py から呼ばれる（install.command・install.bat は install.py を呼ぶ）。何度実行しても同じ状態になる。
 
   python register.py            氏名を聞き（初回だけ）、設定を書き、毎日 10:00 の定期実行を登録する
   python register.py --off      定期実行を外す（設定と報告は残す）
