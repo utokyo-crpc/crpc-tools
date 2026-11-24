@@ -14,4 +14,4 @@ AI活用の月次報告は、crpc-tools の install.bat（Mac は install.comman
    - `--no-upload`：作るだけで Box に置かない
 3. 出力の最後の数行を、そのまま日本語で要約して伝える。作った報告のパスを示し、中身を見たいと言われたら Read で開く
 
-報告の中身を手で直したいときは、`~/.config/crpc/monthly-report/reports/<YYYY-MM>/<氏名>.md` を直してから、`node "<repo>/monthly-report/run.mjs" --month <YYYY-MM>` ではなく、Box の同じファイルに新しい版として上げる（`box files:upload <パス> --parent-id <月のフォルダID> --overwrite`）。
+報告の中身を手で直したいときは、Box の `月次報告/<YYYY-MM>/<氏名>.md` を直接直す。複数の端末を使う人は、後から別の端末の分が置かれるとまとめ直しで上書きされるので、そろってから直す（仕組みは `monthly-report/README.md` 3.1）。

@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // AI活用の月次報告の材料を、この端末の Claude Code の記録（~/.claude/projects）から作る。
 //
-//   node collect.mjs --month YYYY-MM --out <材料.md> [--exclude-cwd <dir>]
+//   node collect.mjs --month YYYY-MM --out <材料.md> [--exclude-cwd <dir>] [--stats <集計.json>]
 //
 // 出すのは、プロジェクト（作業フォルダの名前）ごとのセッション数・使った日数・動いていた時間・依頼の数と、
 // 依頼の文の抜粋。材料は要約役の Claude に渡すためだけのもので、run.mjs が使い終わったら消す。
+// --stats には、プロジェクトごとの数と使った日付を JSON で書く（複数の端末の報告を1つにまとめるときの集計に使う。依頼の文は入れない）。
 // 依頼の判定と時間の数え方（記録の間隔が5分以内ならつなぐ）は claude-toolkit の claude-usage に合わせている。
 // 判定を変えるときは claude-usage の isHumanPrompt と揃える。
 import fs from "node:fs";
@@ -16,6 +17,7 @@ const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : un
 const month = opt("--month");
 const out = opt("--out");
 const exclude = opt("--exclude-cwd");
+const statsOut = opt("--stats");
 if (!/^\d{4}-\d{2}$/.test(month || "") || !out) {
   console.error("使い方: node collect.mjs --month YYYY-MM --out <材料.md> [--exclude-cwd <dir>]");
   process.exit(1);
@@ -24,6 +26,7 @@ const [y, m] = month.split("-").map(Number);
 const from = new Date(y, m - 1, 1).getTime(); // 端末の現地時刻で月を切る
 const to = new Date(y, m, 1).getTime();
 const IDLE = 5 * 60 * 1000;
+const fmtDate = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const MAX_PER_PROJECT = 60; // 1プロジェクトから渡す依頼の文の数
 const MAX_CHARS = 200; // 依頼の文1件の長さ
 
@@ -104,7 +107,7 @@ for (const s of sessions.values()) {
   P.sessions++;
   s.ts.sort((a, b) => a - b);
   for (let i = 0; i < s.ts.length; i++) {
-    P.days.add(new Date(s.ts[i]).toDateString());
+    P.days.add(fmtDate(s.ts[i]));
     if (i > 0 && s.ts[i] - s.ts[i - 1] <= IDLE) P.ms += s.ts[i] - s.ts[i - 1];
   }
   P.prompts.push(...s.prompts);
@@ -116,7 +119,6 @@ for (const P of projects.values()) {
   P.days.forEach((d) => allDays.add(d));
   totalMs += P.ms; totalPrompts += P.prompts.length; totalSessions += P.sessions;
 }
-const fmtDate = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const hours = (ms) => (ms / 3600000).toFixed(1);
 
 const L = [];
@@ -145,4 +147,9 @@ for (const [name, P] of sorted) {
 }
 fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
 fs.writeFileSync(out, L.join("\n"), "utf8");
+if (statsOut) {
+  const proj = {};
+  for (const [name, P] of projects) proj[name] = { sessions: P.sessions, ms: P.ms, prompts: P.prompts.length, days: [...P.days].sort() };
+  fs.writeFileSync(statsOut, JSON.stringify({ month, earliest: earliest === Infinity ? null : fmtDate(earliest), projects: proj }), "utf8");
+}
 console.log(JSON.stringify({ month, projects: projects.size, sessions: totalSessions, prompts: totalPrompts, hours: Number(hours(totalMs)) }));
