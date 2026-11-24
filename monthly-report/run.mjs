@@ -29,7 +29,7 @@ const STATE = path.join(STATE_DIR, "state.json");
 const LOG = path.join(STATE_DIR, "run.log");
 const LOCK = path.join(STATE_DIR, "run.lock");
 const BOX_PARENT = process.env.CRPC_MONTHLY_BOX_PARENT || "435463497599"; // Box: Projects/センター共通/AI活用/月次報告（環境変数は試験用）
-const DEVICES = "devices"; // 端末ごとの報告を置くサブフォルダ（Windows の .cmd に日本語を渡せないので ASCII）
+const DEVICES = "devices"; // 端末ごとの報告を置くサブフォルダ（既にある Box のフォルダ名なので変えない）
 const HOST = (process.env.CRPC_MONTHLY_HOST || os.hostname()).replace(/\.local$/i, "").replace(/[^A-Za-z0-9-]+/g, "-").slice(0, 40) || "pc";
 const FIRST_MONTH = "2026-11"; // 定期実行で作るのはこの月の分から（10月分は一回限りの指示で作った）
 
@@ -144,32 +144,28 @@ function generate() {
 }
 
 // 2. 端末の分を Box に置き、そろった端末の分を <氏名>.md にまとめる
+// box（vendor/claude-toolkit/tools/box）を Python で直接呼ぶ。設定は register.py が書く（box_login.py の値）
 function box(boxArgs) {
   const b = conf.box || {};
-  if (b.run) return run(conf.node || process.execPath, [b.run, ...boxArgs]); // node で直接起動（日本語の引数が崩れない）
-  return run(b.cmd || "box", boxArgs);
+  if (!b.python || !b.script) throw new Error("box の設定がありません（install をもう一度実行してください）");
+  return run(b.python, [b.script, b.account || "utokyo", ...boxArgs]);
 }
 const items = (folderId) => {
-  const r = box(["folders:items", folderId, "--fields", "name,sha1,description", "--json"]);
+  const r = box(["items", folderId, "--fields", "type,id,name,sha1,description"]);
   if (r.status !== 0) throw new Error(`Box のフォルダ ${folderId} を読めません：${(r.stderr || "").trim().slice(0, 200)}`);
   return JSON.parse(r.stdout || "[]");
 };
 function ensureFolder(parent, name) {
-  let f = items(parent).find((x) => x.type === "folder" && x.name === name);
-  if (f) return f;
-  const cr = box(["folders:create", parent, name, "--json"]);
-  if (cr.status === 0) return JSON.parse(cr.stdout);
-  f = items(parent).find((x) => x.type === "folder" && x.name === name); // 他の人が同時に作った
-  if (!f) throw new Error(`Box にフォルダ ${name} を作れません：${(cr.stderr || "").trim().slice(0, 200)}`);
-  return f;
+  const cr = box(["mkdir", parent, name, "--exist-ok"]); // 既にあれば（他の人が同時に作ったときも）それを返す
+  if (cr.status !== 0) throw new Error(`Box にフォルダ ${name} を作れません：${(cr.stderr || "").trim().slice(0, 200)}`);
+  return JSON.parse(cr.stdout);
 }
-const fileOf = (out) => { const o = JSON.parse(out); return Array.isArray(o) ? o[0] : o.entries ? o.entries[0] : o; };
 function put(localPath, parentId, description) {
-  const up = box(["files:upload", localPath, "--parent-id", parentId, "--overwrite", "--json"]);
+  const up = box(["upload", parentId, localPath, "--overwrite"]);
   if (up.status !== 0) throw new Error(`${path.basename(localPath)} を Box に置けません：${(up.stderr || "").trim().slice(0, 200)}`);
-  const f = fileOf(up.stdout);
+  const f = JSON.parse(up.stdout);
   if (description !== undefined) {
-    const d = box(["files:update", f.id, "--description", description]);
+    const d = box(["put", `files/${f.id}`, "--data", JSON.stringify({ description })]);
     if (d.status !== 0) log(`説明欄を書けません（次の実行でまとめ直す）：${(d.stderr || "").trim().slice(0, 200)}`);
   }
   return f;
@@ -204,7 +200,7 @@ function syncMerged(mo, monthFolder) {
   fs.mkdirSync(dir, { recursive: true });
   try {
     const got = parts.map((p, i) => {
-      const dl = box(["files:download", p.id, "--destination", dir, "--save-as", `part${i}.md`, "--overwrite"]);
+      const dl = box(["download", p.id, path.join(dir, `part${i}.md`)]);
       if (dl.status !== 0) throw new Error(`${p.name} を読めません：${(dl.stderr || "").trim().slice(0, 200)}`);
       const text = fs.readFileSync(path.join(dir, `part${i}.md`), "utf8");
       const m = text.match(STATS_RE);
@@ -254,8 +250,8 @@ function upload() {
   // まとめ直しを確かめるのは、今回置いた月と、前月（ほかの端末が後から置くことがある）
   const check = [...new Set([...pending, ...(fs.existsSync(reportPath(month)) ? [month] : [])])].sort();
   if (!check.length) return;
-  const me = (() => { try { return box(["users:get", "me", "--json"]); } catch (e) { return { status: -1, stderr: String(e) }; } })();
-  if (me.status !== 0) { log(`Box CLI が使えないので、報告は手元に置いたままにします（${STATE_DIR}）`); return; }
+  const me = (() => { try { return box(["whoami"]); } catch (e) { return { status: -1, stderr: String(e) }; } })();
+  if (me.status !== 0) { log(`Box にログインしていないので、報告は手元に置いたままにします（${STATE_DIR}）。install をもう一度実行するとログインできます`); return; }
   for (const mo of check) {
     try {
       const monthFolder = ensureFolder(BOX_PARENT, mo);

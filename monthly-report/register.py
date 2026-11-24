@@ -33,23 +33,17 @@ def which(*names):
     return ""
 
 
-def npm_root():
-    npm = which("npm.cmd", "npm") if platform.system() == "Windows" else which("npm")
-    if not npm:
-        return ""
-    try:
-        return subprocess.run([npm, "root", "-g"], capture_output=True, text=True, timeout=60).stdout.strip()
-    except Exception:
-        return ""
-
-
 def box_config():
-    root = npm_root()
-    run = Path(root) / "@box" / "cli" / "bin" / "run" if root else None
-    if run and run.is_file():
-        return {"run": str(run)}
-    cmd = which("box.cmd", "box") if platform.system() == "Windows" else which("box")
-    return {"cmd": cmd} if cmd else {}
+    """box（vendor/claude-toolkit/tools/box）の呼び方。Python で box.py を直接呼ぶ。
+
+    Windows の box.cmd は cmd.exe を通るので日本語の引数（氏名の入ったファイル名）が崩れる。
+    Python を直接起動すれば崩れない。アカウント名と box.py の場所は box_login.py が持つ。
+    """
+    sys.path.insert(0, str(HERE.parent))
+    import box_login
+    if not box_login.SCRIPT.is_file():
+        return {}
+    return {"python": sys.executable, "script": str(box_login.SCRIPT), "account": box_login.ACCOUNT}
 
 
 def load():
@@ -160,7 +154,7 @@ def main():
     if ok:
         print(f"✅ 毎日 10:00 に前月の報告が済んでいるかを確かめ、無ければ作って Box に置きます（氏名：{conf['name']}）")
         if not conf["box"]:
-            print("   Box CLI が見つからないため、報告は手元（~/.config/crpc/monthly-report/reports）に置きます")
+            print("   box が見つからないため、報告は手元（~/.config/crpc/monthly-report/reports）に置きます")
     else:
         print(f"⚠️  定期実行を登録できませんでした：{err[:300]}")
 

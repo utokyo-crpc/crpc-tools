@@ -1,7 +1,7 @@
 # CRPC AI環境ツール
 
 作成日：2026-07-03
-改訂日：2026-11-16
+改訂日：2026-11-25
 
 東京大学医学部附属病院 臨床研究推進センター（CRPC）メンバー向けの配布リポジトリ。
 Claude Code のスキルと補助ツールを `git pull` で常に最新版に保てる。
@@ -27,7 +27,7 @@ Claude Code のスキルと補助ツールを `git pull` で常に最新版に�
    - Mac：Finder で `install.command` をダブルクリックする。ターミナルから動かすときは、`crpc-tools` のフォルダで `./install.command` と打つ（先頭の `./` が要る。`install.command` だけでは「command not found」になる）
    - Windows：エクスプローラーで `install.bat` をダブルクリックする
 
-   汎用スキルの取得（submodule）・Python等の確認・Gemini APIキー設定まで自動で行う（`--recursive` を付け忘れても取得される）。
+   汎用スキルの取得（submodule）・Python等の確認・Box（東大）へのログイン・Gemini APIキー設定まで自動で行う（`--recursive` を付け忘れても取得される）。Box のログインでは、画面に出るリンクを開いて中の1行をコピーし、貼り付けてから、ブラウザでご自分の東大のアカウントで許可する（`box_login.py`）。Box CLI（`box` コマンド）を入れていた人は、同じ名前で衝突するので外す（`npm uninstall -g @box/cli`）
 
 ### 個人の PC に入れる場合
 

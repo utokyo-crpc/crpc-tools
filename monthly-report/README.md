@@ -1,7 +1,7 @@
 # AI活用の月次報告
 
 作成日：2026-11-13
-改訂日：2026-11-24
+改訂日：2026-11-25
 
 ## 1. 何をするか
 
@@ -11,7 +11,7 @@
 
 crpc-tools を最新にして install.bat（Mac は install.command）を実行する。途中で「月次報告に使う氏名」を聞かれたら、漢字で空白なしに入れる（2回目以降は聞かれない）。これで毎日 10:00 の定期実行が登録される（Windows はタスク スケジューラの「CRPC AI活用 月次報告」、Mac は launchd の `jp.crpc.monthly-report`）。
 
-- 要るもの：Claude Code、Node.js。Box CLI（`box login` 済み）があれば Box に置き、無ければ手元に置いて、入れた後の実行でまとめて置く
+- 要るもの：Claude Code、Node.js。Box は install が入れる box（`vendor/claude-toolkit/tools/box`、ログインは `box_login.py`）で置く。ログインしていなければ手元に置き、ログインした後の実行でまとめて置く
 - 外すとき：`python monthly-report/register.py --off`
 
 ## 3. 動き

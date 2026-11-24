@@ -181,6 +181,10 @@ def main() -> None:
     else:
         print("ℹ️  Claude Code 未インストール: スキルのインストールをスキップ")
 
+    # Box（東大）へのログイン。box 本体は上の claude-toolkit の install.py が ~/.local/bin に置く
+    print()
+    subprocess.call([sys.executable, str(Path(__file__).parent / "box_login.py")])
+
     # AI活用の月次報告の定期実行（monthly-report/README.md）
     print()
     subprocess.call([sys.executable, str(Path(__file__).parent / "monthly-report" / "register.py")])
