@@ -1,9 +1,9 @@
 # CRPC AI環境ツール
 
 作成日：2026-07-03
-改訂日：2026-11-25
+改訂日：2026-11-28
 
-東京大学医学部附属病院 臨床研究推進センター（CRPC）メンバー向けの配布リポジトリ。
+東京大学病院 臨床研究推進センター（CRPC）メンバー向けの配布リポジトリ。
 Claude Code のスキルと補助ツールを `git pull` で常に最新版に保てる。
 
 ## 構成
@@ -54,13 +54,21 @@ git submodule update --init --recursive
 
 そのあとインストーラ（`install.command` / `install.bat`）を再実行する。何度実行しても問題ない。上流で追加されたスキル・規約は配置され、**廃止されたものは端末から撤去される**。自分で書き換えたファイルは残す。
 
+## プロジェクトの指示ファイル
+
+各プロジェクトのフォルダに置く指示は `AGENTS.md` に書く（2026-11-28 に `CLAUDE.md` から切り替えた）。`AGENTS.md` は Claude Code・Codex など複数の AI の道具が共通に読む名前で、1本書けばどの道具にも効く。
+
+- インストーラは、`CLAUDE.md` と `AGENTS.md` が混ざっていても両方を読む設定を `~/.claude/settings.json` に入れる。混ざったままだと、Claude Code は既定で `AGENTS.md` を読まないため
+- `~/Projects` に `CLAUDE.md` が残っていれば、インストーラの最後に件数が出る。Claude Code に「指示ファイルを AGENTS.md に移して」と頼むと、移す計画を見せたうえで、了承すれば名前の変更とコミットまで行う（スキル `agents-md-migrate`）
+- `~/.claude/CLAUDE.md`（自分のグローバル設定）は対象外で、名前はそのまま
+
 ## Claude の自動メモリ
 
 Claude Code は、作業の中で知ったこと（各自の好みや注意点）を自動でメモに残し、次のセッションで読み込む（auto memory）。メモは端末ごとのフォルダ（`~/.claude/projects/<作業フォルダ>/memory/`）にあり、ほかの端末とは同期されず、ほかの人からも見えない。
 
 - 既定のまま使ってよい。1台の PC で使う人にとっては、Claude が各自の好みを覚える手軽な手段になる
 - CRPC で共通の規則は、このリポジトリで配るものを正とし、メモには頼らない
-- 複数の端末を使う人や、自分の `CLAUDE.md` を git で管理している人は、止めてもよい。メモが端末ごとに食い違い、git で管理する指示と同じことを二重に持ちやすいためである。止めるには `~/.claude/settings.json`（Windows は `%USERPROFILE%\.claude\settings.json`）に `"autoMemoryEnabled": false` を足す。止めてもメモのファイルは消えないので、残したい中身は自分の `CLAUDE.md` などへ移しておく
+- 複数の端末を使う人や、自分の `AGENTS.md` を git で管理している人は、止めてもよい。メモが端末ごとに食い違い、git で管理する指示と同じことを二重に持ちやすいためである。止めるには `~/.claude/settings.json`（Windows は `%USERPROFILE%\.claude\settings.json`）に `"autoMemoryEnabled": false` を足す。止めてもメモのファイルは消えないので、残したい中身は自分の `AGENTS.md` などへ移しておく
 
 ## ディレクトリ構成
 
